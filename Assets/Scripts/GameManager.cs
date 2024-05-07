@@ -2,12 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
-using System.Linq;
+using TMPro;
 
 public class GameManager : MonoBehaviour, IDataPersistence
 {
 	private string cardTag = "Card";
 	private string path = "Images/FrontCard";
+
+	public TextMeshProUGUI totalGuessesText;
+	public TextMeshProUGUI timerText;
+
+	private float gameTime;
+	private bool gameEnded;
+
 
 	[SerializeField] private Sprite backCard;
 	[SerializeField] private float flipDuration = 0.3f;
@@ -68,8 +75,34 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			isNewGame = false;
 		}
 
+
+		UpdateUI();
+		gameTime = 0f;
+		gameEnded = false;
+		StartCoroutine(UpdateTimer());
+
 		gameGuesses = playableCards.Count / 2;
 		AddListeners();
+	}
+
+	IEnumerator UpdateTimer()
+	{
+		while (!gameEnded)
+		{
+			gameTime += Time.deltaTime;
+
+			int minutes = Mathf.FloorToInt(gameTime / 60f);
+			int seconds = Mathf.FloorToInt(gameTime % 60f);
+
+			timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+
+			yield return null; 
+		}
+	}
+
+	void UpdateUI()
+	{
+		totalGuessesText.text = "Turns " + countGuesses;
 	}
 
 	void GetCards()
@@ -154,6 +187,8 @@ public class GameManager : MonoBehaviour, IDataPersistence
 				flippedCard[firstGuessIndex].image.color = new Color(0, 0, 0, 0);
 				flippedCard[secondGuessIndex].image.color = new Color(0, 0, 0, 0);
 
+
+
 				indexRemoved.Add(firstGuessIndex);
 				indexRemoved.Add(secondGuessIndex);
 
@@ -163,9 +198,12 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			{
 				StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
 				StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
+
 			}
 
 			firstGuess = secondGuess = false;
+
+			UpdateUI();
 		}
 	}
 
@@ -177,6 +215,8 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		{
 			Debug.Log("Game Finished");
 			Debug.Log("It took you " + countGuesses + " to end");
+			UpdateUI();
+			gameEnded = true;
 		}
 	}
 

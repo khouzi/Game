@@ -7,10 +7,12 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Transform panel;
 
     [SerializeField] private GameObject card;
+    [SerializeField] private int grid;
+
 
     void Awake()
     {
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < grid; i++)
         {
             GameObject button = Instantiate(card);
             button.name = "" + i;
