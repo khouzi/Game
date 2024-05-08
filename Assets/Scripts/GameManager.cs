@@ -21,9 +21,14 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	[SerializeField] private TextMeshProUGUI Turns;
 	[SerializeField] private TextMeshProUGUI timer;
 	[SerializeField] private TextMeshProUGUI comboUI;
+	[SerializeField] private TextMeshProUGUI scoreBoardUI;
+
 	[SerializeField] private TextMeshProUGUI highestcomboUI;
 	[SerializeField] private GameObject menu;
 	[SerializeField] private GameObject game;
+	[SerializeField] private GameObject sidePanel;
+	[SerializeField] private GameObject scoreBoard;
+
 
 	// Audio related variables
 	[Header("SFX")]
@@ -140,39 +145,10 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		}
 	}
 
-	IEnumerator DelayBeforeFlippingCard()
-	{
-		foreach (Button card in flippedCard)
-			card.interactable = false;
-
-		yield return new WaitForSeconds(delayBeforeFlip);
-
-		foreach (Button card in flippedCard)
-		{
-			card.interactable = true;
-			StartCoroutine(FlipCard(card, backCard));
-		}
-	}
-
-	IEnumerator UpdateTimer()
-	{
-		while (!gameEnded)
-		{
-			gameTime += Time.deltaTime;
-
-			int minutes = Mathf.FloorToInt(gameTime / 60f);
-			int seconds = Mathf.FloorToInt(gameTime % 60f);
-
-			timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
-
-			yield return null;
-		}
-	}
-
+	
 	void UpdateUI()
 	{
 		Turns.text = "Turns " + countGuesses;
-
 		comboUI.text = "Combo: " + comboCount;
 		highestcomboUI.text = "Highest Combo: " + highestCombo;
 	}
@@ -299,16 +275,63 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		{
 			audioSource.PlayOneShot(gameOver);
 
-			Debug.Log("Game Finished");
-			Debug.Log("It took you " + countGuesses + " to end");
-
 			UpdateUI();
 
 			Homebtn.SetActive(true);
 
 			gameEnded = true;
+
+			scoreBoard.SetActive(true);
+			sidePanel.SetActive(false);
+			scoreBoardUI.text = "It took you <color=red>" + countGuesses + " turns</color> to finish";
+			StartCoroutine(ScaleScoreBoard());
 		}
 	}
+
+	IEnumerator UpdateTimer()
+	{
+		while (!gameEnded)
+		{
+			gameTime += Time.deltaTime;
+
+			int minutes = Mathf.FloorToInt(gameTime / 60f);
+			int seconds = Mathf.FloorToInt(gameTime % 60f);
+
+			timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+
+			yield return null;
+		}
+	}
+
+
+	IEnumerator DelayBeforeFlippingCard()
+	{
+		foreach (Button card in flippedCard)
+			card.interactable = false;
+
+		yield return new WaitForSeconds(delayBeforeFlip);
+
+		foreach (Button card in flippedCard)
+		{
+			card.interactable = true;
+			StartCoroutine(FlipCard(card, backCard));
+		}
+	}
+
+	IEnumerator ScaleScoreBoard()
+{
+    float elapsedTime = 0f;
+    Vector3 initialScale = scoreBoard.transform.localScale;
+    Vector3 targetScale = Vector3.one;
+
+    while (elapsedTime < 1f)
+    {
+        elapsedTime += Time.deltaTime;
+        float t = Mathf.Clamp01(elapsedTime / 1f);
+        scoreBoard.transform.localScale = Vector3.Lerp(initialScale, targetScale, t);
+        yield return null;
+    }
+}
 
 	IEnumerator FlipCard(Button card, Sprite targetSprite)
 	{
