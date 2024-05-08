@@ -10,13 +10,19 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	private string cardTag = "Card";
 	private string path = "Images/FrontCard";
 
-	[SerializeField] private TextMeshProUGUI Turns;
-	[SerializeField] private TextMeshProUGUI timer;
+	[SerializeField] private TextMeshProUGUI Turns, timer, comboUI, highestcomboUI;
 
 	[SerializeField] private GameObject menu, game;
 
+	private int comboCount;
+	private int highestCombo;
+
 	private float gameTime;
 	private bool gameEnded;
+
+
+	[SerializeField] private AudioClip cardFlip, cardMatch, cardMismatch, gameOver;
+	[SerializeField] private AudioSource audioSource;
 
 	[SerializeField] private Sprite backCard;
 	[SerializeField] private float flipDuration = 0.3f;
@@ -125,6 +131,9 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	void UpdateUI()
 	{
 		Turns.text = "Turns " + countGuesses;
+
+		comboUI.text = "Combo: " + comboCount;
+		highestcomboUI.text = "Highest Combo: " + highestCombo;
 	}
 
 	void GetCards()
@@ -179,6 +188,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			firstGuessIndex = clickedIndex;
 			firstGuessCard = playableCards[firstGuessIndex].name;
 
+			audioSource.PlayOneShot(cardFlip);
 			StartCoroutine(FlipCard(flippedCard[firstGuessIndex], playableCards[firstGuessIndex]));
 		}
 		else if (!secondGuess && clickedIndex != firstGuessIndex)
@@ -187,6 +197,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			secondGuessIndex = clickedIndex;
 			secondGuessCard = playableCards[secondGuessIndex].name;
 
+			audioSource.PlayOneShot(cardFlip);
 			StartCoroutine(FlipCard(flippedCard[secondGuessIndex], playableCards[secondGuessIndex]));
 
 			countGuesses++;
@@ -212,10 +223,21 @@ public class GameManager : MonoBehaviour, IDataPersistence
 				indexRemoved.Add(firstGuessIndex);
 				indexRemoved.Add(secondGuessIndex);
 
+				audioSource.PlayOneShot(cardMatch);
+
+				comboCount++;
+
+				if (comboCount > highestCombo)
+					highestCombo = comboCount;
+
 				CheckEndgame();
 			}
 			else
 			{
+				audioSource.PlayOneShot(cardMismatch);
+
+				comboCount = 1;
+
 				StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
 				StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
 			}
@@ -232,6 +254,9 @@ public class GameManager : MonoBehaviour, IDataPersistence
 
 		if (countCorrectGuesses == gameGuesses)
 		{
+			audioSource.PlayOneShot(gameOver);
+
+
 			Debug.Log("Game Finished");
 			Debug.Log("It took you " + countGuesses + " to end");
 
@@ -246,6 +271,8 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		float elapsedTime = 0f;
 		Quaternion startRotation = card.transform.rotation;
 		Quaternion endRotation = Quaternion.Euler(0f, 90f, 0f);
+
+
 
 		while (elapsedTime < flipDuration)
 		{
