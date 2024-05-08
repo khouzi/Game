@@ -1,9 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
 using TMPro;
-using Unity.VisualScripting;
 
 public class GameManager : MonoBehaviour, IDataPersistence
 {
@@ -28,7 +28,6 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	[SerializeField] private GameObject game;
 	[SerializeField] private GameObject sidePanel;
 	[SerializeField] private GameObject scoreBoard;
-
 
 	// Audio related variables
 	[Header("SFX")]
@@ -57,320 +56,438 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	[SerializeField] private bool isNewGame;
 	[SerializeField] private Sprite backCard;
 
-
 	// IDataPersistence methods
 	public void LoadData(GameData gameData)
 	{
-		countCorrectGuesses = gameData.countCorrectGuesses;
-		countGuesses = gameData.countGuesses;
-		indexRemoved = new List<int>(gameData.cardIndexRemoved);
-		playableCards = new List<Sprite>(gameData.playableCards);
-		gameTime = gameData.gameTime;
-		gameEnded = gameData.gameIsFinised;
+		try
+		{
+			countCorrectGuesses = gameData.countCorrectGuesses;
+			countGuesses = gameData.countGuesses;
+			indexRemoved = new List<int>(gameData.cardIndexRemoved);
+			playableCards = new List<Sprite>(gameData.playableCards);
+			gameTime = gameData.gameTime;
+			gameEnded = gameData.gameIsFinised;
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error loading game data: " + e.Message);
+		}
 	}
 
 	public void SaveData(ref GameData gameData)
 	{
-		gameData.countCorrectGuesses = countCorrectGuesses;
-		gameData.countGuesses = countGuesses;
-		gameData.cardIndexRemoved = new List<int>(indexRemoved);
-		gameData.playableCards = new List<Sprite>(playableCards);
-		gameData.gameTime = gameTime;
-		gameData.gameIsFinised = gameEnded;
+		try
+		{
+			if (gameEnded)
+			{
+				gameData.countCorrectGuesses = countCorrectGuesses;
+				gameData.countGuesses = countGuesses;
+				gameData.cardIndexRemoved = new List<int>(indexRemoved);
+				gameData.playableCards = new List<Sprite>(playableCards);
+				gameData.gameTime = gameTime;
+				gameData.gameIsFinised = gameEnded;
+			}
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error saving game data: " + e.Message);
+		}
 	}
 
 	void Awake()
 	{
-		Debug.Log(gameEnded);
-		frontCards = Resources.LoadAll<Sprite>(path);
-
+		try
+		{
+			frontCards = Resources.LoadAll<Sprite>(path);
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error loading front cards: " + e.Message);
+		}
 	}
 
 	void Start()
 	{
-		if (gameEnded)
-			continueBtn.SetActive(false);
+		try
+		{
+			if (gameEnded)
+				continueBtn.SetActive(false);
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error setting up game: " + e.Message);
+		}
 	}
 
 	public void Startbtn()
 	{
-		indexRemoved.Clear();
-		playableCards.Clear();
-		countCorrectGuesses = countGuesses = 0;
-		gameTime = 0f;
-		isNewGame = true;
-		game.SetActive(true);
-		menu.SetActive(false);
-		Homebtn.SetActive(false);
-		GameStart();
+		try
+		{
+			indexRemoved.Clear();
+			playableCards.Clear();
+			countCorrectGuesses = countGuesses = 0;
+			gameTime = 0f;
+			isNewGame = true;
+			game.SetActive(true);
+			menu.SetActive(false);
+			Homebtn.SetActive(false);
+			GameStart();
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error starting game: " + e.Message);
+		}
 	}
 
 	public void ContinueBtn()
 	{
-		game.SetActive(true);
-		menu.SetActive(false);
-		Homebtn.SetActive(false);
-		isNewGame = false;
-		GameStart();
+		try
+		{
+			game.SetActive(true);
+			menu.SetActive(false);
+			Homebtn.SetActive(false);
+			isNewGame = false;
+			GameStart();
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error continuing game: " + e.Message);
+		}
 	}
 
 	//Main game logic
 	void GameStart()
 	{
-		GetCards();
-
-		if (isNewGame)
+		try
 		{
-			AddCards();
-			Shuffle(playableCards);
-			RevealCard();
-			isNewGame = false;
+			GetCards();
+
+			if (isNewGame)
+			{
+				AddCards();
+				Shuffle(playableCards);
+				RevealCard();
+				isNewGame = false;
+			}
+
+			UpdateUI();
+
+			gameEnded = false;
+			StartCoroutine(UpdateTimer());
+
+			gameGuesses = playableCards.Count / 2;
+			AddListeners();
 		}
-
-		UpdateUI();
-
-		gameEnded = false;
-		StartCoroutine(UpdateTimer());
-
-		gameGuesses = playableCards.Count / 2;
-		AddListeners();
+		catch (Exception e)
+		{
+			Debug.LogError("Error starting game: " + e.Message);
+		}
 	}
 
 	void RevealCard()
 	{
-		for (int i = 0; i < flippedCard.Count; i++)
+		try
 		{
-			flippedCard[i].image.sprite = playableCards[i];
-			StartCoroutine(DelayBeforeFlippingCard());
+			for (int i = 0; i < flippedCard.Count; i++)
+			{
+				flippedCard[i].image.sprite = playableCards[i];
+				StartCoroutine(DelayBeforeFlippingCard());
+			}
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error revealing cards: " + e.Message);
 		}
 	}
 
-	
 	void UpdateUI()
 	{
-		Turns.text = "Turns " + countGuesses;
-		comboUI.text = "Combo: " + comboCount;
-		highestcomboUI.text = "Highest Combo: " + highestCombo;
+		try
+		{
+			Turns.text = "Turns " + countGuesses;
+			comboUI.text = "Combo: " + comboCount;
+			highestcomboUI.text = "Highest Combo: " + highestCombo;
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error updating UI: " + e.Message);
+		}
 	}
 
 	//get all card from scene
 	void GetCards()
 	{
-		GameObject[] objects = GameObject.FindGameObjectsWithTag(cardTag);
-		for (int i = 0; i < objects.Length; i++)
+		try
 		{
-			flippedCard.Add(objects[i].GetComponent<Button>());
-
-			if (indexRemoved.Contains(i))
+			GameObject[] objects = GameObject.FindGameObjectsWithTag(cardTag);
+			for (int i = 0; i < objects.Length; i++)
 			{
-				flippedCard[i].image.color = new Color(0, 0, 0, 0);
-				flippedCard[i].interactable = false;
+				Button button = objects[i].GetComponent<Button>();
+				if (button != null)
+				{
+					flippedCard.Add(button);
+
+					if (indexRemoved.Contains(i))
+					{
+						button.image.color = new Color(0, 0, 0, 0);
+						button.interactable = false;
+					}
+					else
+						button.image.sprite = backCard;
+				}
+				else
+				{
+					Debug.LogWarning("Button component not found on game object: " + objects[i].name);
+				}
 			}
-			else
-				flippedCard[i].image.sprite = backCard;
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error getting cards: " + e.Message);
 		}
 	}
 
 	// Add playable card
 	void AddCards()
 	{
-		int cardCount = flippedCard.Count;
-		int index = 0;
-
-		for (int i = 0; i < cardCount; i++)
+		try
 		{
-			if (index == cardCount / 2)
-				index = 0;
+			int cardCount = flippedCard.Count;
+			int index = 0;
 
-			playableCards.Add(frontCards[index]);
-			index++;
+			for (int i = 0; i < cardCount; i++)
+			{
+				if (index == cardCount / 2)
+					index = 0;
+
+				playableCards.Add(frontCards[index]);
+				index++;
+			}
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error adding cards: " + e.Message);
 		}
 	}
 
 	void AddListeners()
 	{
-		foreach (Button card in flippedCard)
+		try
 		{
-			card.onClick.AddListener(() => CardPicked());
+			foreach (Button card in flippedCard)
+			{
+				card.onClick.AddListener(() => CardPicked());
+			}
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error adding listeners: " + e.Message);
 		}
 	}
 
 	public void CardPicked()
 	{
-		string name = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name;
-
-		int clickedIndex = int.Parse(name);
-
-		if (!firstGuess)
+		try
 		{
-			firstGuess = true;
-			firstGuessIndex = clickedIndex;
-			firstGuessCard = playableCards[firstGuessIndex].name;
+			string name = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name;
 
-			audioSource.PlayOneShot(cardFlip);
-			StartCoroutine(FlipCard(flippedCard[firstGuessIndex], playableCards[firstGuessIndex]));
+			int clickedIndex = int.Parse(name);
+
+			if (!firstGuess)
+			{
+				firstGuess = true;
+				firstGuessIndex = clickedIndex;
+				firstGuessCard = playableCards[firstGuessIndex].name;
+
+				audioSource.PlayOneShot(cardFlip);
+				StartCoroutine(FlipCard(flippedCard[firstGuessIndex], playableCards[firstGuessIndex]));
+			}
+			else if (!secondGuess && clickedIndex != firstGuessIndex)
+			{
+				secondGuess = true;
+				secondGuessIndex = clickedIndex;
+				secondGuessCard = playableCards[secondGuessIndex].name;
+
+				audioSource.PlayOneShot(cardFlip);
+				StartCoroutine(FlipCard(flippedCard[secondGuessIndex], playableCards[secondGuessIndex]));
+
+				countGuesses++;
+
+				StartCoroutine(CheckCards());
+			}
 		}
-		else if (!secondGuess && clickedIndex != firstGuessIndex)
+		catch (Exception e)
 		{
-			secondGuess = true;
-			secondGuessIndex = clickedIndex;
-			secondGuessCard = playableCards[secondGuessIndex].name;
-
-			audioSource.PlayOneShot(cardFlip);
-			StartCoroutine(FlipCard(flippedCard[secondGuessIndex], playableCards[secondGuessIndex]));
-
-			countGuesses++;
-
-			StartCoroutine(CheckCards());
+			Debug.LogError("Error picking card: " + e.Message);
 		}
 	}
 
 	//Check Card matches
 	IEnumerator CheckCards()
 	{
-		yield return new WaitForSeconds(0.5f);
+		
+			yield return new WaitForSeconds(0.5f);
 
-		if (firstGuess && secondGuess)
-		{
-			if (firstGuessCard == secondGuessCard && firstGuessIndex != secondGuessIndex)
+			if (firstGuess && secondGuess)
 			{
-				flippedCard[firstGuessIndex].interactable = false;
-				flippedCard[secondGuessIndex].interactable = false;
-				flippedCard[firstGuessIndex].image.color = new Color(0, 0, 0, 0);
-				flippedCard[secondGuessIndex].image.color = new Color(0, 0, 0, 0);
+				if (firstGuessCard == secondGuessCard && firstGuessIndex != secondGuessIndex)
+				{
+					flippedCard[firstGuessIndex].interactable = false;
+					flippedCard[secondGuessIndex].interactable = false;
+					flippedCard[firstGuessIndex].image.color = new Color(0, 0, 0, 0);
+					flippedCard[secondGuessIndex].image.color = new Color(0, 0, 0, 0);
 
-				indexRemoved.Add(firstGuessIndex);
-				indexRemoved.Add(secondGuessIndex);
+					indexRemoved.Add(firstGuessIndex);
+					indexRemoved.Add(secondGuessIndex);
 
-				audioSource.PlayOneShot(cardMatch);
+					audioSource.PlayOneShot(cardMatch);
 
-				comboCount++;
+					comboCount++;
 
-				if (comboCount > highestCombo)
-					highestCombo = comboCount;
+					if (comboCount > highestCombo)
+						highestCombo = comboCount;
 
-				CheckEndgame();
+					CheckEndgame();
+				}
+				else
+				{
+					audioSource.PlayOneShot(cardMismatch);
+
+					comboCount = 1;
+
+					StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
+					StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
+				}
+
+				firstGuess = secondGuess = false;
+
+				UpdateUI();
 			}
-			else
-			{
-				audioSource.PlayOneShot(cardMismatch);
-
-				comboCount = 1;
-
-				StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
-				StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
-			}
-
-			firstGuess = secondGuess = false;
-
-			UpdateUI();
-		}
+		
 	}
 
 	void CheckEndgame()
 	{
-		countCorrectGuesses++;
-
-		if (countCorrectGuesses == gameGuesses)
+		try
 		{
-			audioSource.PlayOneShot(gameOver);
+			countCorrectGuesses++;
 
-			UpdateUI();
+			if (countCorrectGuesses == gameGuesses)
+			{
+				audioSource.PlayOneShot(gameOver);
 
-			Homebtn.SetActive(true);
+				UpdateUI();
 
-			gameEnded = true;
+				Homebtn.SetActive(true);
 
-			scoreBoard.SetActive(true);
-			sidePanel.SetActive(false);
-			scoreBoardUI.text = "It took you <color=red>" + countGuesses + " turns</color> to finish";
-			StartCoroutine(ScaleScoreBoard());
+				gameEnded = true;
+
+				scoreBoard.SetActive(true);
+				sidePanel.SetActive(false);
+				scoreBoardUI.text = "It took you <color=red>" + countGuesses + " turns</color> to finish";
+				StartCoroutine(ScaleScoreBoard());
+			}
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error checking end game: " + e.Message);
 		}
 	}
 
 	IEnumerator UpdateTimer()
 	{
-		while (!gameEnded)
-		{
-			gameTime += Time.deltaTime;
+			while (!gameEnded)
+			{
+				gameTime += Time.deltaTime;
 
-			int minutes = Mathf.FloorToInt(gameTime / 60f);
-			int seconds = Mathf.FloorToInt(gameTime % 60f);
+				int minutes = Mathf.FloorToInt(gameTime / 60f);
+				int seconds = Mathf.FloorToInt(gameTime % 60f);
 
-			timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+				timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
 
-			yield return null;
-		}
+				yield return null;
+			}
 	}
-
 
 	IEnumerator DelayBeforeFlippingCard()
 	{
-		foreach (Button card in flippedCard)
-			card.interactable = false;
+			foreach (Button card in flippedCard)
+				card.interactable = false;
 
-		yield return new WaitForSeconds(delayBeforeFlip);
+			yield return new WaitForSeconds(delayBeforeFlip);
 
-		foreach (Button card in flippedCard)
-		{
-			card.interactable = true;
-			StartCoroutine(FlipCard(card, backCard));
-		}
+			foreach (Button card in flippedCard)
+			{
+				card.interactable = true;
+				StartCoroutine(FlipCard(card, backCard));
+			}
+		
 	}
 
 	IEnumerator ScaleScoreBoard()
-{
-    float elapsedTime = 0f;
-    Vector3 initialScale = scoreBoard.transform.localScale;
-    Vector3 targetScale = Vector3.one;
+	{
+		
+			float elapsedTime = 0f;
+			Vector3 initialScale = scoreBoard.transform.localScale;
+			Vector3 targetScale = Vector3.one;
 
-    while (elapsedTime < 1f)
-    {
-        elapsedTime += Time.deltaTime;
-        float t = Mathf.Clamp01(elapsedTime / 1f);
-        scoreBoard.transform.localScale = Vector3.Lerp(initialScale, targetScale, t);
-        yield return null;
-    }
-}
+			while (elapsedTime < 1f)
+			{
+				elapsedTime += Time.deltaTime;
+				float t = Mathf.Clamp01(elapsedTime / 1f);
+				scoreBoard.transform.localScale = Vector3.Lerp(initialScale, targetScale, t);
+				yield return null;
+			}
+		
+	}
 
 	IEnumerator FlipCard(Button card, Sprite targetSprite)
 	{
-		float elapsedTime = 0f;
-		Quaternion startRotation = card.transform.rotation;
-		Quaternion endRotation = Quaternion.Euler(0f, 90f, 0f);
+		
+			float elapsedTime = 0f;
+			Quaternion startRotation = card.transform.rotation;
+			Quaternion endRotation = Quaternion.Euler(0f, 90f, 0f);
 
-		while (elapsedTime < flipDuration)
-		{
-			elapsedTime += Time.deltaTime;
-			float t = Mathf.Clamp01(elapsedTime / flipDuration);
-			card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
-			yield return null;
-		}
+			while (elapsedTime < flipDuration)
+			{
+				elapsedTime += Time.deltaTime;
+				float t = Mathf.Clamp01(elapsedTime / flipDuration);
+				card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
+				yield return null;
+			}
 
-		card.image.sprite = targetSprite;
+			card.image.sprite = targetSprite;
 
-		elapsedTime = 0f;
-		startRotation = card.transform.rotation;
-		endRotation = Quaternion.Euler(0f, 0f, 0f);
+			elapsedTime = 0f;
+			startRotation = card.transform.rotation;
+			endRotation = Quaternion.Euler(0f, 0f, 0f);
 
-		while (elapsedTime < flipDuration)
-		{
-			elapsedTime += Time.deltaTime;
-			float t = Mathf.Clamp01(elapsedTime / flipDuration);
-			card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
-			yield return null;
-		}
+			while (elapsedTime < flipDuration)
+			{
+				elapsedTime += Time.deltaTime;
+				float t = Mathf.Clamp01(elapsedTime / flipDuration);
+				card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
+				yield return null;
+			}
+		
 	}
 
 	//Shuffle playable cards
 	void Shuffle(List<Sprite> List)
 	{
-		for (int i = 0; i < List.Count; i++)
+		try
 		{
-			Sprite temp = List[i];
-			int randomIndex = Random.Range(i, List.Count);
-			List[i] = List[randomIndex];
-			List[randomIndex] = temp;
+			for (int i = 0; i < List.Count; i++)
+			{
+				Sprite temp = List[i];
+				int randomIndex = UnityEngine.Random.Range(i, List.Count);
+				List[i] = List[randomIndex];
+				List[randomIndex] = temp;
+			}
+		}
+		catch (Exception e)
+		{
+			Debug.LogError("Error shuffling cards: " + e.Message);
 		}
 	}
 }
