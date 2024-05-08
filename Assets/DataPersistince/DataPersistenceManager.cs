@@ -8,6 +8,8 @@ public class DataPersistenceManager : MonoBehaviour
 {
 	[Header("File Storage Settings")]
 	[SerializeField] private string fileName;
+
+	[SerializeField] private GameObject continueBtn;
 	private GameData gameData;
 	private List<IDataPersistence> dataPersistencesObjects;
 	private FileDataHandler dataHandler;
@@ -39,14 +41,13 @@ public class DataPersistenceManager : MonoBehaviour
 		if (this.gameData == null)
 		{
 			Debug.Log("No data was found");
+			continueBtn.SetActive(false);
 			NewGame();
 		}
 
 		foreach (IDataPersistence dataPersistenceObj in dataPersistencesObjects)
 		{
 			dataPersistenceObj.LoadData(gameData);
-			Debug.Log("countGuesses was loaded: " + gameData.countGuesses);
-			Debug.Log("countCorrectGuesses was loaded: " + gameData.countCorrectGuesses);
 		}
 
 	}
@@ -58,8 +59,6 @@ public class DataPersistenceManager : MonoBehaviour
 			dataPersistenceObj.SaveData(ref gameData);
 		}
 
-		Debug.Log("countGuesses = " + gameData.countGuesses);
-		Debug.Log("countCorrectGuesses = " + gameData.countCorrectGuesses);
 
 		dataHandler.Save(gameData);
 	}

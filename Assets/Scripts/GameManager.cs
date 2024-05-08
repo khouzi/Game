@@ -7,46 +7,53 @@ using Unity.VisualScripting;
 
 public class GameManager : MonoBehaviour, IDataPersistence
 {
+	// Variables related to card management
 	private string cardTag = "Card";
 	private string path = "Images/FrontCard";
-
-	[SerializeField] private TextMeshProUGUI Turns, timer, comboUI, highestcomboUI;
-
-	[SerializeField] private GameObject menu, game;
-
-	private int comboCount;
-	private int highestCombo;
-
-	private float gameTime;
-	private bool gameEnded;
-
-
-	[SerializeField] private AudioClip cardFlip, cardMatch, cardMismatch, gameOver;
-	[SerializeField] private AudioSource audioSource;
-
-	[SerializeField] private Sprite backCard;
-	[SerializeField] private float flipDuration = 0.3f;
-
-	[SerializeField] private bool isNewGame;
-
 	private Sprite[] frontCards;
 	public List<Sprite> playableCards = new List<Sprite>();
-
 	public List<Button> flippedCard = new List<Button>();
 	public List<int> indexRemoved = new List<int>();
+	[SerializeField] private GameObject continueBtn, Homebtn;
 
+	// UI related variables
+	[Header("UI")]
+	[SerializeField] private TextMeshProUGUI Turns;
+	[SerializeField] private TextMeshProUGUI timer;
+	[SerializeField] private TextMeshProUGUI comboUI;
+	[SerializeField] private TextMeshProUGUI highestcomboUI;
+	[SerializeField] private GameObject menu;
+	[SerializeField] private GameObject game;
 
-	private bool firstGuess, secondGuess;
+	// Audio related variables
+	[Header("SFX")]
+	[SerializeField] private AudioClip cardFlip;
+	[SerializeField] private AudioClip cardMatch;
+	[SerializeField] private AudioClip cardMismatch;
+	[SerializeField] private AudioClip gameOver;
+	[SerializeField] private AudioSource audioSource;
 
-
+	// Game state variables
+	private int comboCount;
+	private int highestCombo;
+	private float gameTime;
+	private bool gameEnded = false;
 	private int countGuesses;
 	private int countCorrectGuesses;
 	private int gameGuesses;
-
 	private int firstGuessIndex, secondGuessIndex;
-
 	private string firstGuessCard, secondGuessCard;
+	private bool firstGuess, secondGuess;
 
+	// Animation related variables
+	[Header("Animation")]
+	[SerializeField] private float delayBeforeFlip = 2;
+	[SerializeField] private float flipDuration = 0.3f;
+	[SerializeField] private bool isNewGame;
+	[SerializeField] private Sprite backCard;
+
+
+	// IDataPersistence methods
 	public void LoadData(GameData gameData)
 	{
 		countCorrectGuesses = gameData.countCorrectGuesses;
@@ -54,6 +61,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		indexRemoved = new List<int>(gameData.cardIndexRemoved);
 		playableCards = new List<Sprite>(gameData.playableCards);
 		gameTime = gameData.gameTime;
+		gameEnded = gameData.gameIsFinised;
 	}
 
 	public void SaveData(ref GameData gameData)
@@ -63,14 +71,21 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		gameData.cardIndexRemoved = new List<int>(indexRemoved);
 		gameData.playableCards = new List<Sprite>(playableCards);
 		gameData.gameTime = gameTime;
-
+		gameData.gameIsFinised = gameEnded;
 	}
 
 	void Awake()
 	{
+		Debug.Log(gameEnded);
 		frontCards = Resources.LoadAll<Sprite>(path);
+
 	}
 
+	void Start()
+	{
+		if (gameEnded)
+			continueBtn.SetActive(false);
+	}
 
 	public void Startbtn()
 	{
@@ -81,6 +96,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		isNewGame = true;
 		game.SetActive(true);
 		menu.SetActive(false);
+		Homebtn.SetActive(false);
 		GameStart();
 	}
 
@@ -88,10 +104,12 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	{
 		game.SetActive(true);
 		menu.SetActive(false);
+		Homebtn.SetActive(false);
 		isNewGame = false;
 		GameStart();
 	}
 
+	//Main game logic
 	void GameStart()
 	{
 		GetCards();
@@ -100,9 +118,9 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		{
 			AddCards();
 			Shuffle(playableCards);
+			RevealCard();
 			isNewGame = false;
 		}
-
 
 		UpdateUI();
 
@@ -111,6 +129,29 @@ public class GameManager : MonoBehaviour, IDataPersistence
 
 		gameGuesses = playableCards.Count / 2;
 		AddListeners();
+	}
+
+	void RevealCard()
+	{
+		for (int i = 0; i < flippedCard.Count; i++)
+		{
+			flippedCard[i].image.sprite = playableCards[i];
+			StartCoroutine(DelayBeforeFlippingCard());
+		}
+	}
+
+	IEnumerator DelayBeforeFlippingCard()
+	{
+		foreach (Button card in flippedCard)
+			card.interactable = false;
+
+		yield return new WaitForSeconds(delayBeforeFlip);
+
+		foreach (Button card in flippedCard)
+		{
+			card.interactable = true;
+			StartCoroutine(FlipCard(card, backCard));
+		}
 	}
 
 	IEnumerator UpdateTimer()
@@ -136,6 +177,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		highestcomboUI.text = "Highest Combo: " + highestCombo;
 	}
 
+	//get all card from scene
 	void GetCards()
 	{
 		GameObject[] objects = GameObject.FindGameObjectsWithTag(cardTag);
@@ -153,6 +195,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		}
 	}
 
+	// Add playable card
 	void AddCards()
 	{
 		int cardCount = flippedCard.Count;
@@ -206,7 +249,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		}
 	}
 
-
+	//Check Card matches
 	IEnumerator CheckCards()
 	{
 		yield return new WaitForSeconds(0.5f);
@@ -256,11 +299,12 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		{
 			audioSource.PlayOneShot(gameOver);
 
-
 			Debug.Log("Game Finished");
 			Debug.Log("It took you " + countGuesses + " to end");
 
 			UpdateUI();
+
+			Homebtn.SetActive(true);
 
 			gameEnded = true;
 		}
@@ -271,8 +315,6 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		float elapsedTime = 0f;
 		Quaternion startRotation = card.transform.rotation;
 		Quaternion endRotation = Quaternion.Euler(0f, 90f, 0f);
-
-
 
 		while (elapsedTime < flipDuration)
 		{
@@ -297,6 +339,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		}
 	}
 
+	//Shuffle playable cards
 	void Shuffle(List<Sprite> List)
 	{
 		for (int i = 0; i < List.Count; i++)
@@ -306,6 +349,5 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			List[i] = List[randomIndex];
 			List[randomIndex] = temp;
 		}
-
 	}
 }
