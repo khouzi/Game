@@ -7,6 +7,7 @@ public class GameData
 {
     public List<int> cardIndexRemoved = new List<int>();
     public List<Sprite> playableCards = new List<Sprite>();
+    public float gameTime;
 
     public int countGuesses, countCorrectGuesses;
 

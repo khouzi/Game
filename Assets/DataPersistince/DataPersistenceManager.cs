@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.UI;
 
 public class DataPersistenceManager : MonoBehaviour
 {
@@ -25,13 +26,6 @@ public class DataPersistenceManager : MonoBehaviour
 		this.dataPersistencesObjects = FindAllDataPersistenceObjects();
 		LoadGame();
 	}
-
-	private void Start()
-	{
-		
-	}
-
-
 	public void NewGame()
 	{
 		this.gameData = new GameData();

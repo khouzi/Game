@@ -1,27 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine.UI;
 using UnityEngine;
 using TMPro;
-using Unity.VisualScripting;
 
-public class GameManager : MonoBehaviour, IDataPersistence
+public class Test : MonoBehaviour, IDataPersistence
 {
 	private string cardTag = "Card";
 	private string path = "Images/FrontCard";
 
-	[SerializeField] private TextMeshProUGUI Turns;
-	[SerializeField] private TextMeshProUGUI timer;
-
-	[SerializeField] private GameObject menu, game;
+	public TextMeshProUGUI totalGuessesText;
+	public TextMeshProUGUI timerText;
 
 	private float gameTime;
 	private bool gameEnded;
 
+
+    
+
+
 	[SerializeField] private Sprite backCard;
 	[SerializeField] private float flipDuration = 0.3f;
 
-	[SerializeField] private bool isNewGame;
+	[SerializeField] private bool isNewGame = true;
 
 	private Sprite[] frontCards;
 	public List<Sprite> playableCards = new List<Sprite>();
@@ -46,8 +48,8 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		countCorrectGuesses = gameData.countCorrectGuesses;
 		countGuesses = gameData.countGuesses;
 		indexRemoved = new List<int>(gameData.cardIndexRemoved);
-		playableCards = new List<Sprite>(gameData.playableCards);
-		gameTime = gameData.gameTime;
+		if (!isNewGame)
+			playableCards = new List<Sprite>(gameData.playableCards);
 	}
 
 	public void SaveData(ref GameData gameData)
@@ -56,7 +58,6 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		gameData.countGuesses = countGuesses;
 		gameData.cardIndexRemoved = new List<int>(indexRemoved);
 		gameData.playableCards = new List<Sprite>(playableCards);
-		gameData.gameTime = gameTime;
 
 	}
 
@@ -65,28 +66,20 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		frontCards = Resources.LoadAll<Sprite>(path);
 	}
 
-
-	public void Startbtn()
+	public void NewGame()
 	{
-		indexRemoved.Clear();
-		playableCards.Clear();
-		countCorrectGuesses = countGuesses = 0;
-		gameTime = 0f;
 		isNewGame = true;
-		game.SetActive(true);
-		menu.SetActive(false);
-		GameStart();
+		StartGame();
 	}
 
-	public void ContinueBtn()
+	public void Continue()
 	{
-		game.SetActive(true);
-		menu.SetActive(false);
 		isNewGame = false;
-		GameStart();
+		StartGame();
 	}
 
-	void GameStart()
+
+	private void StartGame()
 	{
 		GetCards();
 
@@ -97,9 +90,9 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			isNewGame = false;
 		}
 
-
 		UpdateUI();
 
+		gameTime = 0f;
 		gameEnded = false;
 		StartCoroutine(UpdateTimer());
 
@@ -116,15 +109,15 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			int minutes = Mathf.FloorToInt(gameTime / 60f);
 			int seconds = Mathf.FloorToInt(gameTime % 60f);
 
-			timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+			timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
 
-			yield return null;
+			yield return null; 
 		}
 	}
 
 	void UpdateUI()
 	{
-		Turns.text = "Turns " + countGuesses;
+		totalGuessesText.text = "Turns " + countGuesses;
 	}
 
 	void GetCards()
@@ -134,7 +127,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		{
 			flippedCard.Add(objects[i].GetComponent<Button>());
 
-			if (indexRemoved.Contains(i))
+			if (indexRemoved.Contains(i) && !isNewGame)
 			{
 				flippedCard[i].image.color = new Color(0, 0, 0, 0);
 				flippedCard[i].interactable = false;
@@ -209,6 +202,8 @@ public class GameManager : MonoBehaviour, IDataPersistence
 				flippedCard[firstGuessIndex].image.color = new Color(0, 0, 0, 0);
 				flippedCard[secondGuessIndex].image.color = new Color(0, 0, 0, 0);
 
+
+
 				indexRemoved.Add(firstGuessIndex);
 				indexRemoved.Add(secondGuessIndex);
 
@@ -218,6 +213,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 			{
 				StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
 				StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
+
 			}
 
 			firstGuess = secondGuess = false;
@@ -234,9 +230,7 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		{
 			Debug.Log("Game Finished");
 			Debug.Log("It took you " + countGuesses + " to end");
-
 			UpdateUI();
-
 			gameEnded = true;
 		}
 	}
@@ -281,4 +275,5 @@ public class GameManager : MonoBehaviour, IDataPersistence
 		}
 
 	}
+
 }
