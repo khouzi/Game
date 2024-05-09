@@ -78,15 +78,12 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	{
 		try
 		{
-			if (gameEnded)
-			{
-				gameData.countCorrectGuesses = countCorrectGuesses;
-				gameData.countGuesses = countGuesses;
-				gameData.cardIndexRemoved = new List<int>(indexRemoved);
-				gameData.playableCards = new List<Sprite>(playableCards);
-				gameData.gameTime = gameTime;
-				gameData.gameIsFinised = gameEnded;
-			}
+			gameData.countCorrectGuesses = countCorrectGuesses;
+			gameData.countGuesses = countGuesses;
+			gameData.cardIndexRemoved = new List<int>(indexRemoved);
+			gameData.playableCards = new List<Sprite>(playableCards);
+			gameData.gameTime = gameTime;
+			gameData.gameIsFinised = gameEnded;
 		}
 		catch (Exception e)
 		{
@@ -325,45 +322,45 @@ public class GameManager : MonoBehaviour, IDataPersistence
 	//Check Card matches
 	IEnumerator CheckCards()
 	{
-		
-			yield return new WaitForSeconds(0.5f);
 
-			if (firstGuess && secondGuess)
+		yield return new WaitForSeconds(0.5f);
+
+		if (firstGuess && secondGuess)
+		{
+			if (firstGuessCard == secondGuessCard && firstGuessIndex != secondGuessIndex)
 			{
-				if (firstGuessCard == secondGuessCard && firstGuessIndex != secondGuessIndex)
-				{
-					flippedCard[firstGuessIndex].interactable = false;
-					flippedCard[secondGuessIndex].interactable = false;
-					flippedCard[firstGuessIndex].image.color = new Color(0, 0, 0, 0);
-					flippedCard[secondGuessIndex].image.color = new Color(0, 0, 0, 0);
+				flippedCard[firstGuessIndex].interactable = false;
+				flippedCard[secondGuessIndex].interactable = false;
+				flippedCard[firstGuessIndex].image.color = new Color(0, 0, 0, 0);
+				flippedCard[secondGuessIndex].image.color = new Color(0, 0, 0, 0);
 
-					indexRemoved.Add(firstGuessIndex);
-					indexRemoved.Add(secondGuessIndex);
+				indexRemoved.Add(firstGuessIndex);
+				indexRemoved.Add(secondGuessIndex);
 
-					audioSource.PlayOneShot(cardMatch);
+				audioSource.PlayOneShot(cardMatch);
 
-					comboCount++;
+				comboCount++;
 
-					if (comboCount > highestCombo)
-						highestCombo = comboCount;
+				if (comboCount > highestCombo)
+					highestCombo = comboCount;
 
-					CheckEndgame();
-				}
-				else
-				{
-					audioSource.PlayOneShot(cardMismatch);
-
-					comboCount = 1;
-
-					StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
-					StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
-				}
-
-				firstGuess = secondGuess = false;
-
-				UpdateUI();
+				CheckEndgame();
 			}
-		
+			else
+			{
+				audioSource.PlayOneShot(cardMismatch);
+
+				comboCount = 1;
+
+				StartCoroutine(FlipCard(flippedCard[firstGuessIndex], backCard));
+				StartCoroutine(FlipCard(flippedCard[secondGuessIndex], backCard));
+			}
+
+			firstGuess = secondGuess = false;
+
+			UpdateUI();
+		}
+
 	}
 
 	void CheckEndgame()
@@ -396,80 +393,80 @@ public class GameManager : MonoBehaviour, IDataPersistence
 
 	IEnumerator UpdateTimer()
 	{
-			while (!gameEnded)
-			{
-				gameTime += Time.deltaTime;
+		while (!gameEnded)
+		{
+			gameTime += Time.deltaTime;
 
-				int minutes = Mathf.FloorToInt(gameTime / 60f);
-				int seconds = Mathf.FloorToInt(gameTime % 60f);
+			int minutes = Mathf.FloorToInt(gameTime / 60f);
+			int seconds = Mathf.FloorToInt(gameTime % 60f);
 
-				timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+			timer.text = string.Format("{0:00}:{1:00}", minutes, seconds);
 
-				yield return null;
-			}
+			yield return null;
+		}
 	}
 
 	IEnumerator DelayBeforeFlippingCard()
 	{
-			foreach (Button card in flippedCard)
-				card.interactable = false;
+		foreach (Button card in flippedCard)
+			card.interactable = false;
 
-			yield return new WaitForSeconds(delayBeforeFlip);
+		yield return new WaitForSeconds(delayBeforeFlip);
 
-			foreach (Button card in flippedCard)
-			{
-				card.interactable = true;
-				StartCoroutine(FlipCard(card, backCard));
-			}
-		
+		foreach (Button card in flippedCard)
+		{
+			card.interactable = true;
+			StartCoroutine(FlipCard(card, backCard));
+		}
+
 	}
 
 	IEnumerator ScaleScoreBoard()
 	{
-		
-			float elapsedTime = 0f;
-			Vector3 initialScale = scoreBoard.transform.localScale;
-			Vector3 targetScale = Vector3.one;
 
-			while (elapsedTime < 1f)
-			{
-				elapsedTime += Time.deltaTime;
-				float t = Mathf.Clamp01(elapsedTime / 1f);
-				scoreBoard.transform.localScale = Vector3.Lerp(initialScale, targetScale, t);
-				yield return null;
-			}
-		
+		float elapsedTime = 0f;
+		Vector3 initialScale = scoreBoard.transform.localScale;
+		Vector3 targetScale = Vector3.one;
+
+		while (elapsedTime < 1f)
+		{
+			elapsedTime += Time.deltaTime;
+			float t = Mathf.Clamp01(elapsedTime / 1f);
+			scoreBoard.transform.localScale = Vector3.Lerp(initialScale, targetScale, t);
+			yield return null;
+		}
+
 	}
 
 	IEnumerator FlipCard(Button card, Sprite targetSprite)
 	{
-		
-			float elapsedTime = 0f;
-			Quaternion startRotation = card.transform.rotation;
-			Quaternion endRotation = Quaternion.Euler(0f, 90f, 0f);
 
-			while (elapsedTime < flipDuration)
-			{
-				elapsedTime += Time.deltaTime;
-				float t = Mathf.Clamp01(elapsedTime / flipDuration);
-				card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
-				yield return null;
-			}
+		float elapsedTime = 0f;
+		Quaternion startRotation = card.transform.rotation;
+		Quaternion endRotation = Quaternion.Euler(0f, 90f, 0f);
 
-			card.image.sprite = targetSprite;
+		while (elapsedTime < flipDuration)
+		{
+			elapsedTime += Time.deltaTime;
+			float t = Mathf.Clamp01(elapsedTime / flipDuration);
+			card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
+			yield return null;
+		}
 
-			elapsedTime = 0f;
-			startRotation = card.transform.rotation;
-			endRotation = Quaternion.Euler(0f, 0f, 0f);
+		card.image.sprite = targetSprite;
 
-			while (elapsedTime < flipDuration)
-			{
-				elapsedTime += Time.deltaTime;
-				float t = Mathf.Clamp01(elapsedTime / flipDuration);
-				card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
-				yield return null;
-			}
-		
+		elapsedTime = 0f;
+		startRotation = card.transform.rotation;
+		endRotation = Quaternion.Euler(0f, 0f, 0f);
+
+		while (elapsedTime < flipDuration)
+		{
+			elapsedTime += Time.deltaTime;
+			float t = Mathf.Clamp01(elapsedTime / flipDuration);
+			card.transform.rotation = Quaternion.Slerp(startRotation, endRotation, t);
+			yield return null;
+		}
+
 	}
 
 	//Shuffle playable cards
